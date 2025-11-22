@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Research Agent</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <!-- History Sidebar -->
+    <div class="history-sidebar" id="historySidebar">
+        <div class="history-header">
+            <h3>Search History</h3>
+            <button class="close-history" onclick="toggleHistory()">×</button>
+        </div>
+        <div class="history-list" id="historyList">
+            <div class="history-loading">Loading...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <button class="history-btn" onclick="toggleHistory()" title="View History">📜</button>
+            <div class="header-icon">📊</div>
+            <div class="header-text">
+                <h1 class="title">Financial Research Agent</h1>
+                <p class="subtitle">AI-Powered Financial Analysis & Research</p>
+            </div>
+        </header>
+
+        <!-- Input Section -->
+        <section class="input-section">
+            <input type="text" id="queryInput" class="query-input" placeholder="is amazon a good buy" />
+            <button id="analyzeBtn" class="analyze-btn">Analyze</button>
+        </section>
+
+        <!-- Activity Log Section -->
+        <section class="activity-section" id="activitySection" style="display: none;">
+            <div class="activity-header" onclick="toggleActivityLog()">
+                <h3>🔍 Activity Log</h3>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="activity-content" id="activityLogContent">
+                <!-- Activity logs will be inserted here -->
+            </div>
+        </section>
+
+        <!-- Progress Section -->
+        <section class="progress-section" id="progressSection" style="display: none;">
+            <h2 class="section-title">Research Progress</h2>
+            <div class="progress-stepper">
+                <div class="step" id="step-planning">
+                    <div class="step-circle">
+                        <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="step-label">Planning</div>
+                    <div class="step-line"></div>
+                </div>
+
+                <div class="step" id="step-searching">
+                    <div class="step-circle">
+                        <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="step-label">Searching</div>
+                    <div class="step-line"></div>
+                </div>
+
+                <div class="step" id="step-writing">
+                    <div class="step-circle">
+                        <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="step-label">Writing Report</div>
+                    <div class="step-line"></div>
+                </div>
+
+                <div class="step" id="step-verifying">
+                    <div class="step-circle">
+                        <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="step-label">Verification</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="result-card">
+                <!-- Stock Header -->
+                <div class="stock-header">
+                    <div class="stock-info">
+                        <span class="stock-logo" id="stockLogo">📈</span>
+                        <h2 class="stock-name" id="stockName">Company Name</h2>
+                    </div>
+                    <div class="recommendation-badge" id="recommendationBadge">
+                        Analyzing...
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="metrics-grid" id="metricsGrid">
+                    <!-- Metrics will be dynamically inserted -->
+                </div>
+
+                <!-- Charts and Recommendation -->
+                <div class="analysis-container">
+                    <!-- Charts -->
+                    <div class="charts-section">
+                        <div class="chart-placeholder">
+                            <div class="chart-title">Stock Price (30 Days)</div>
+                            <canvas id="stockChart"></canvas>
+                        </div>
+                        <div class="chart-placeholder">
+                            <div class="chart-title">Performance Trend</div>
+                            <div class="chart-content">📈 Chart visualization</div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendation -->
+                    <div class="recommendation-section">
+                        <div class="recommendation-title">Recommendation</div>
+                        <div class="recommendation-text" id="recommendationText">
+                            Analysis in progress...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full Report (Collapsible) -->
+                <div class="full-report">
+                    <button class="toggle-report" onclick="toggleReport()">
+                        <span>View Full Report</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="report-content" id="fullReportContent" style="display: none;">
+                        <div id="reportMarkdown"></div>
+
+                        <div class="follow-up-section" style="margin-top: 2rem;">
+                            <h3>Follow-up Questions</h3>
+                            <ul id="followUpQuestions"></ul>
+                        </div>
+
+                        <div class="verification-section" style="margin-top: 2rem;">
+                            <h3>Verification</h3>
+                            <div id="verificationContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Error Section -->
+        <section class="error-section" id="errorSection" style="display: none;">
+            <div class="error-card">
+                <h2 class="error-title">⚠️ Error</h2>
+                <p class="error-message" id="errorMessage"></p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Powered by OpenAI Agents SDK</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
