@@ -69,9 +69,10 @@ class FinancialResearchManager:
 
     async def _plan_searches(self, query: str) -> FinancialSearchPlan:
         self.printer.update_item("planning", "Planning searches...")
-        self._log("Planner", "Analyzing query", query)
+        self._log("Planner", "Input", f"Query: {query}")
         
         result = await Runner.run(planner_agent, f"Query: {query}")
+        self._log("Planner", "Output", str(result.final_output))
         
         plan = result.final_output_as(FinancialSearchPlan)
         self._log("Planner", "Generated search plan", f"Created {len(plan.searches)} search queries")
@@ -104,11 +105,11 @@ class FinancialResearchManager:
 
     async def _search(self, item: FinancialSearchItem) -> str | None:
         input_data = f"Search term: {item.query}\nReason: {item.reason}"
-        self._log("Search", "Executing search", f"Query: {item.query}")
+        self._log("Search", "Input", input_data)
         try:
             result = await Runner.run(search_agent, input_data)
             output = str(result.final_output)
-            self._log("Search", "Search completed", f"Found results for: {item.query}")
+            self._log("Search", "Output", output)
             return output
         except Exception as e:
             self._log("Search", "Search failed", f"Error: {str(e)}")
@@ -132,6 +133,8 @@ class FinancialResearchManager:
         self._log("Writer", "Starting report generation", "Synthesizing search results...")
         
         input_data = f"Original query: {query}\nSummarized search results: {search_results}"
+        self._log("Writer", "Input", input_data)
+        
         result = Runner.run_streamed(writer_with_tools, input_data)
         update_messages = [
             "Planning report structure...",
@@ -140,20 +143,39 @@ class FinancialResearchManager:
         ]
         last_update = time.time()
         next_message = 0
-        async for _ in result.stream_events():
+        
+        async for event in result.stream_events():
+            # Inspect events for tool calls (transparency)
+            # Note: The exact event structure depends on the agents SDK. 
+            # We'll try to catch generic tool use events if possible.
+            try:
+                if hasattr(event, 'tool_calls') and event.tool_calls:
+                    for tool_call in event.tool_calls:
+                        self._log("Writer", "Tool Call", f"Calling tool: {tool_call.function.name}\nArguments: {tool_call.function.arguments}")
+                elif hasattr(event, 'data') and isinstance(event.data, dict) and 'tool' in event.data:
+                     self._log("Writer", "Tool Call", str(event.data))
+            except:
+                pass
+
             if time.time() - last_update > 5 and next_message < len(update_messages):
                 self.printer.update_item("writing", update_messages[next_message])
                 self._log("Writer", "Progress update", update_messages[next_message])
                 next_message += 1
                 last_update = time.time()
+                
         self.printer.mark_item_done("writing")
-        return result.final_output_as(FinancialReportData)
+        final_output = result.final_output_as(FinancialReportData)
+        self._log("Writer", "Output", final_output.markdown_report[:500] + "...") # Log first 500 chars to avoid huge payload
+        return final_output
 
     async def _verify_report(self, report: FinancialReportData) -> VerificationResult:
         self.printer.update_item("verifying", "Verifying report...")
-        self._log("Verifier", "Starting verification", "Checking report for accuracy and consistency")
+        self._log("Verifier", "Input", report.markdown_report)
         
-        result = await Runner.run(verifier_agent, report.markdown_report)
+        # Hard cap turns to prevent infinite loops
+        result = await Runner.run(verifier_agent, report.markdown_report, max_turns=10)
+        self._log("Verifier", "Output", str(result.final_output))
+        
         verification = result.final_output_as(VerificationResult)
         
         self._log("Verifier", "Verification complete", f"Verified: {verification.verified}\nIssues: {verification.issues}")

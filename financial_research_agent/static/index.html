@@ -10,13 +10,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
 <body>
     <!-- History Sidebar -->
     <div class="history-sidebar" id="historySidebar">
         <div class="history-header">
-            <h3>Search History</h3>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <h3>History</h3>
+                <button class="clear-history-btn" onclick="clearHistory()" title="Clear History">🗑️</button>
+            </div>
             <button class="close-history" onclick="toggleHistory()">×</button>
         </div>
         <div class="history-list" id="historyList">
@@ -141,6 +145,15 @@
 
                 <!-- Full Report (Collapsible) -->
                 <div class="full-report">
+                    <div class="report-actions">
+                        <button class="action-btn" onclick="downloadPDF()">
+                            <span>📄</span> Download PDF
+                        </button>
+                        <button class="action-btn" onclick="copyReport()">
+                            <span>📋</span> Copy Text
+                        </button>
+                    </div>
+
                     <button class="toggle-report" onclick="toggleReport()">
                         <span>View Full Report</span>
                         <span class="arrow">▼</span>

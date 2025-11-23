@@ -17,6 +17,47 @@ function toggleActivityLog() {
     header.classList.toggle('collapsed');
 }
 
+// Download report as PDF
+function downloadPDF() {
+    window.print();
+}
+
+// Copy report to clipboard
+function copyReport() {
+    const markdown = document.getElementById('reportMarkdown').getAttribute('data-markdown');
+    if (!markdown) {
+        // Fallback to text content if data attribute not set
+        const text = document.getElementById('reportMarkdown').innerText;
+        navigator.clipboard.writeText(text);
+    } else {
+        navigator.clipboard.writeText(markdown);
+    }
+
+    const btn = document.querySelector('.action-btn span'); // The clipboard icon
+    // Temporary visual feedback could be added here if we had a specific ID or class for the icon
+    // but since we querySelector'd generically, let's just alert or console log for now 
+    // or rely on user knowing it worked.
+    // Actually, let's find the specific button that was clicked if possible, but for now simple is fine.
+}
+
+// Clear search history
+async function clearHistory() {
+    if (!confirm('Are you sure you want to clear your search history?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/history/clear', { method: 'POST' });
+        if (response.ok) {
+            loadHistory();
+        } else {
+            console.error('Failed to clear history');
+        }
+    } catch (error) {
+        console.error('Error clearing history:', error);
+    }
+}
+
 // Load and render stock chart
 async function loadChart(query) {
     const canvas = document.getElementById('stockChart');
@@ -47,6 +88,11 @@ async function loadChart(query) {
         const ctx = canvas.getContext('2d');
         canvas.style.display = 'block';
 
+        // Create gradient
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(91, 122, 229, 0.5)');
+        gradient.addColorStop(1, 'rgba(91, 122, 229, 0.0)');
+
         window.stockChartInstance = new Chart(ctx, {
             type: 'line',
             data: {
@@ -55,11 +101,12 @@ async function loadChart(query) {
                     label: `${data.symbol} Price`,
                     data: data.prices,
                     borderColor: '#5b7ae5',
-                    backgroundColor: 'rgba(91, 122, 229, 0.1)',
+                    backgroundColor: gradient,
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4,
-                    pointRadius: 0
+                    pointRadius: 0,
+                    pointHoverRadius: 4
                 }]
             },
             options: {
@@ -71,7 +118,12 @@ async function loadChart(query) {
                     },
                     tooltip: {
                         mode: 'index',
-                        intersect: false
+                        intersect: false,
+                        backgroundColor: 'rgba(30, 45, 74, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#a8b3cf',
+                        borderColor: '#2d3f5f',
+                        borderWidth: 1
                     }
                 },
                 scales: {
@@ -81,7 +133,7 @@ async function loadChart(query) {
                             drawBorder: false
                         },
                         ticks: {
-                            display: false // Hide dates to keep clean
+                            display: false
                         }
                     },
                     y: {
@@ -235,35 +287,6 @@ function updateProgress(stage, isDone = false) {
     }
 }
 
-// Simple markdown to HTML converter
-function markdownToHtml(markdown) {
-    let html = markdown;
-
-    // Headers
-    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-    html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-    html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-
-    // Bold
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-    // Italic
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-    // Code blocks
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-    // Line breaks
-    html = html.replace(/\n\n/g, '</p><p>');
-    html = '<p>' + html + '</p>';
-
-    // Lists
-    html = html.replace(/<p>-\s(.*?)<\/p>/g, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
-
-    return html;
-}
-
 // Extract company name from query
 function extractCompanyName(query) {
     const words = query.toLowerCase().split(' ');
@@ -326,8 +349,15 @@ function displayResults(data) {
     // Set recommendation text
     document.getElementById('recommendationText').textContent = data.short_summary;
 
-    // Full report
-    document.getElementById('reportMarkdown').innerHTML = markdownToHtml(data.markdown_report);
+    // Full report - Using marked.js
+    const reportDiv = document.getElementById('reportMarkdown');
+    if (window.marked) {
+        reportDiv.innerHTML = marked.parse(data.markdown_report);
+    } else {
+        // Fallback if marked.js fails to load
+        reportDiv.textContent = data.markdown_report;
+    }
+    reportDiv.setAttribute('data-markdown', data.markdown_report);
 
     // Follow-up questions
     const questionsList = document.getElementById('followUpQuestions');

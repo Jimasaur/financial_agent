@@ -202,6 +202,19 @@ def research():
     return Response(generate(), mimetype='text/event-stream')
 
 
+@app.route('/api/history/clear', methods=['POST'])
+def clear_history():
+    """Clear all search history."""
+    if not db:
+        return {'error': 'Database not available'}, 503
+    
+    try:
+        db.clear_history()
+        return {'status': 'success'}
+    except Exception as e:
+        return {'error': str(e)}, 500
+
+
 @app.route('/api/history', methods=['GET'])
 def get_history():
     """Get recent search history."""
