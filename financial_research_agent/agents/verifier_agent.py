@@ -37,7 +37,7 @@ class VerificationResult(BaseModel):
 verifier_agent = Agent(
     name="VerificationAgent",
     instructions=VERIFIER_PROMPT,
-    model="gpt-5-pro-2025-10-06",
+    model="gpt-4o-mini",
     output_type=VerificationResult,
     tools=[WebSearchTool()],
     model_settings=ModelSettings(tool_choice="auto")

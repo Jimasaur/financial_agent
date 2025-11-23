@@ -118,24 +118,21 @@ async def run_with_callbacks(mgr: FinancialResearchManager, query: str, callback
         'done': True
     })
     
-    # Verification phase
-    callback.emit_event('status', {'stage': 'verifying', 'message': 'Verifying report...'})
-    verification = await mgr._verify_report(report)
-    callback.emit_event('status', {
-        'stage': 'verifying',
-        'message': 'Verification completed',
-        'done': True
-    })
+    # Verification phase - Skipped (Manual now)
+    # callback.emit_event('status', {'stage': 'verifying', 'message': 'Verifying report...'})
+    # verification = await mgr._verify_report(report)
+    # callback.emit_event('status', {
+    #     'stage': 'verifying',
+    #     'message': 'Verification completed',
+    #     'done': True
+    # })
     
     # Return the final results
     result = {
         'short_summary': report.short_summary,
         'markdown_report': report.markdown_report,
         'follow_up_questions': report.follow_up_questions,
-        'verification': {
-            'verified': verification.verified,
-            'issues': verification.issues
-        }
+        'verification': None # Manual verification only
     }
     
     # Save to database if available
@@ -151,7 +148,7 @@ async def run_with_callbacks(mgr: FinancialResearchManager, query: str, callback
                 short_summary=report.short_summary,
                 full_report=report.markdown_report,
                 follow_up_questions=report.follow_up_questions,
-                verification=result['verification'],
+                verification=None,
                 recommendation=recommendation
             )
         except Exception as e:
@@ -199,6 +196,60 @@ def research():
             if event['event'] in ('complete', 'error'):
                 break
     
+    return Response(generate(), mimetype='text/event-stream')
+
+
+@app.route('/api/verify', methods=['POST'])
+def verify_report():
+    """Handle manual verification requests."""
+    data = request.get_json()
+    report_text = data.get('report', '')
+    focus = data.get('focus', '')
+    
+    if not report_text:
+        return {'error': 'Report text is required'}, 400
+        
+    # Create a queue for SSE events
+    event_queue = Queue()
+    callback = WebProgressCallback(event_queue)
+    
+    async def run_verification():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            mgr = FinancialResearchManager(callback=callback)
+            callback.emit_event('status', {'stage': 'verifying', 'message': 'Starting verification...'})
+            
+            result = loop.run_until_complete(mgr.verify_report(report_text, focus))
+            
+            callback.emit_event('complete', {
+                'verified': result.verified,
+                'issues': result.issues,
+                'fact_checks': [fc.dict() for fc in result.fact_checks]
+            })
+        except Exception as e:
+            callback.emit_event('error', {'message': str(e)})
+        finally:
+            loop.close()
+
+    # Start verification in a background thread
+    thread = Thread(target=run_verification)
+    thread.daemon = True
+    thread.start()
+    
+    def generate():
+        """Generator function for SSE streaming."""
+        while True:
+            event = event_queue.get()
+            if event is None:
+                break
+            
+            yield f"event: {event['event']}\n"
+            yield f"data: {json.dumps(event['data'])}\n\n"
+            
+            if event['event'] in ('complete', 'error'):
+                break
+                
     return Response(generate(), mimetype='text/event-stream')
 
 

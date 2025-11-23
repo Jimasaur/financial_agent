@@ -8,185 +8,175 @@
     <link rel="stylesheet" href="/static/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 
 <body>
-    <!-- History Sidebar -->
-    <div class="history-sidebar" id="historySidebar">
-        <div class="history-header">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <h3>History</h3>
-                <button class="clear-history-btn" onclick="clearHistory()" title="Clear History">🗑️</button>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="historySidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Search History</div>
+                <button class="close-sidebar" onclick="toggleHistory()">×</button>
             </div>
-            <button class="close-history" onclick="toggleHistory()">×</button>
-        </div>
-        <div class="history-list" id="historyList">
-            <div class="history-loading">Loading...</div>
-        </div>
-    </div>
-
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <button class="history-btn" onclick="toggleHistory()" title="View History">📜</button>
-            <div class="header-icon">📊</div>
-            <div class="header-text">
-                <h1 class="title">Financial Research Agent</h1>
-                <p class="subtitle">AI-Powered Financial Analysis & Research</p>
+            <div class="history-list" id="historyList">
+                <!-- History items -->
             </div>
-        </header>
-
-        <!-- Input Section -->
-        <section class="input-section">
-            <input type="text" id="queryInput" class="query-input" placeholder="is amazon a good buy" />
-            <button id="analyzeBtn" class="analyze-btn">Analyze</button>
-        </section>
-
-        <!-- Activity Log Section -->
-        <section class="activity-section" id="activitySection" style="display: none;">
-            <div class="activity-header" onclick="toggleActivityLog()">
-                <h3>🔍 Activity Log</h3>
-                <span class="toggle-icon">▼</span>
+            <div style="padding: 1rem; border-top: 1px solid var(--glass-border);">
+                <button class="action-btn" onclick="clearHistory()" style="width: 100%; justify-content: center;">
+                    <span>🗑️</span> Clear History
+                </button>
             </div>
-            <div class="activity-content" id="activityLogContent">
-                <!-- Activity logs will be inserted here -->
-            </div>
-        </section>
+        </aside>
 
-        <!-- Progress Section -->
-        <section class="progress-section" id="progressSection" style="display: none;">
-            <h2 class="section-title">Research Progress</h2>
-            <div class="progress-stepper">
-                <div class="step" id="step-planning">
-                    <div class="step-circle">
-                        <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="brand">
+                    <button class="menu-btn" onclick="toggleHistory()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
                         </svg>
-                    </div>
-                    <div class="step-label">Planning</div>
-                    <div class="step-line"></div>
+                    </button>
+                    <div class="logo-icon">💎</div>
+                    <h1 style="font-size: 1.2rem; margin: 0;">Financial Agent</h1>
                 </div>
+            </header>
 
-                <div class="step" id="step-searching">
-                    <div class="step-circle">
-                        <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
+            <!-- Search Hero -->
+            <section class="search-container">
+                <h1 class="hero-title">Market Intelligence</h1>
+                <p class="hero-subtitle">AI-powered deep dive financial analysis & verification</p>
+
+                <div class="search-box-wrapper">
+                    <input type="text" id="queryInput" class="search-input"
+                        placeholder="Enter a ticker or company name (e.g. NVDA, Tesla)..."
+                        onkeypress="if(event.key === 'Enter') document.getElementById('analyzeBtn').click()">
+                    <button id="analyzeBtn" class="search-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                    </div>
-                    <div class="step-label">Searching</div>
-                    <div class="step-line"></div>
+                    </button>
                 </div>
+            </section>
 
-                <div class="step" id="step-writing">
-                    <div class="step-circle">
-                        <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
+            <!-- Progress Stepper -->
+            <div class="progress-container" id="progressSection">
+                <div class="stepper">
+                    <div class="step" id="step-planning">
+                        <div class="step-icon">1</div>
+                        <div class="step-label">Planning</div>
                     </div>
-                    <div class="step-label">Writing Report</div>
-                    <div class="step-line"></div>
-                </div>
-
-                <div class="step" id="step-verifying">
-                    <div class="step-circle">
-                        <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
+                    <div class="step" id="step-searching">
+                        <div class="step-icon">2</div>
+                        <div class="step-label">Searching</div>
                     </div>
-                    <div class="step-label">Verification</div>
+                    <div class="step" id="step-writing">
+                        <div class="step-icon">3</div>
+                        <div class="step-label">Analysis</div>
+                    </div>
+                    <div class="step" id="step-verifying">
+                        <div class="step-icon">4</div>
+                        <div class="step-label">Verification</div>
+                    </div>
                 </div>
             </div>
-        </section>
 
-        <!-- Results Section -->
-        <section class="results-section" id="resultsSection" style="display: none;">
-            <div class="result-card">
-                <!-- Stock Header -->
-                <div class="stock-header">
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid" id="resultsSection">
+                <!-- Header Card -->
+                <div class="card stock-header-card">
                     <div class="stock-info">
-                        <span class="stock-logo" id="stockLogo">📈</span>
-                        <h2 class="stock-name" id="stockName">Company Name</h2>
+                        <h2 id="stockName">Company</h2>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem;">AI Analysis Report</div>
                     </div>
-                    <div class="recommendation-badge" id="recommendationBadge">
-                        Analyzing...
-                    </div>
+                    <div class="recommendation-badge" id="recommendationBadge">HOLD</div>
                 </div>
 
-                <!-- Metrics Grid -->
-                <div class="metrics-grid" id="metricsGrid">
-                    <!-- Metrics will be dynamically inserted -->
+                <!-- Metrics Column -->
+                <div class="metrics-card" id="metricsGrid">
+                    <!-- Populated by JS -->
                 </div>
 
-                <!-- Charts and Recommendation -->
-                <div class="analysis-container">
-                    <!-- Charts -->
-                    <div class="charts-section">
-                        <div class="chart-placeholder">
-                            <div class="chart-title">Stock Price (30 Days)</div>
-                            <canvas id="stockChart"></canvas>
-                        </div>
-                        <div class="chart-placeholder">
-                            <div class="chart-title">Performance Trend</div>
-                            <div class="chart-content">📈 Chart visualization</div>
-                        </div>
-                    </div>
-
-                    <!-- Recommendation -->
-                    <div class="recommendation-section">
-                        <div class="recommendation-title">Recommendation</div>
-                        <div class="recommendation-text" id="recommendationText">
-                            Analysis in progress...
-                        </div>
-                    </div>
+                <!-- Chart Card -->
+                <div class="card chart-card">
+                    <canvas id="stockChart"></canvas>
                 </div>
 
-                <!-- Full Report (Collapsible) -->
-                <div class="full-report">
-                    <div class="report-actions">
+                <!-- Report Content -->
+                <div class="card report-container">
+                    <div class="report-actions"
+                        style="display: flex; justify-content: flex-end; gap: 1rem; margin-bottom: 1rem;">
                         <button class="action-btn" onclick="downloadPDF()">
-                            <span>📄</span> Download PDF
+                            <span>📄</span> PDF
                         </button>
                         <button class="action-btn" onclick="copyReport()">
-                            <span>📋</span> Copy Text
+                            <span>📋</span> Copy
                         </button>
                     </div>
 
-                    <button class="toggle-report" onclick="toggleReport()">
-                        <span>View Full Report</span>
-                        <span class="arrow">▼</span>
-                    </button>
-                    <div class="report-content" id="fullReportContent" style="display: none;">
-                        <div id="reportMarkdown"></div>
-
-                        <div class="follow-up-section" style="margin-top: 2rem;">
-                            <h3>Follow-up Questions</h3>
-                            <ul id="followUpQuestions"></ul>
+                    <div class="report-content">
+                        <div id="recommendationText"
+                            style="font-size: 1.1rem; margin-bottom: 2rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
                         </div>
 
-                        <div class="verification-section" style="margin-top: 2rem;">
-                            <h3>Verification</h3>
-                            <div id="verificationContent"></div>
+                        <button class="action-btn toggle-report" onclick="toggleReport()"
+                            style="width: 100%; justify-content: center; margin-bottom: 1rem;">
+                            <span>👁️</span> View Full Analysis <span class="arrow">▼</span>
+                        </button>
+
+                        <div id="fullReportContent" style="display: none;">
+                            <div id="reportMarkdown"></div>
+
+                            <div style="margin-top: 3rem;">
+                                <h3>Follow-up Questions</h3>
+                                <ul id="followUpQuestions" style="color: var(--text-secondary);"></ul>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- Error Section -->
-        <section class="error-section" id="errorSection" style="display: none;">
-            <div class="error-card">
-                <h2 class="error-title">⚠️ Error</h2>
-                <p class="error-message" id="errorMessage"></p>
+                <!-- Verification Section -->
+                <div class="card verification-card">
+                    <h3 style="margin-bottom: 1rem;">Verification & Fact Check</h3>
+                    <div id="verificationContent">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
             </div>
-        </section>
 
-        <!-- Footer -->
-        <footer class="footer">
-            <p>Powered by OpenAI Agents SDK</p>
-        </footer>
+            <!-- Error Display -->
+            <div id="errorSection" style="display: none; max-width: 600px; margin: 2rem auto;">
+                <div class="card" style="border-color: var(--danger); background: rgba(239, 68, 68, 0.1);">
+                    <h3 style="color: var(--danger); margin-bottom: 0.5rem;">Error</h3>
+                    <p id="errorMessage"></p>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Activity Log -->
+        <div class="activity-log" id="activitySection" style="display: none;">
+            <div class="activity-header" onclick="toggleActivityLog()">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>⚡</span> Agent Activity
+                </div>
+                <span>▼</span>
+            </div>
+            <div class="activity-content" id="activityLogContent">
+                <!-- Logs -->
+            </div>
+        </div>
     </div>
 
     <script src="/static/script.js"></script>

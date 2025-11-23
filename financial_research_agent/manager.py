@@ -52,8 +52,6 @@ class FinancialResearchManager:
             search_plan = await self._plan_searches(query)
             search_results = await self._perform_searches(search_plan)
             report = await self._write_report(query, search_results)
-            verification = await self._verify_report(report)
-
             final_report = f"Report summary\n\n{report.short_summary}"
             self.printer.update_item("final_report", final_report, is_done=True)
 
@@ -64,8 +62,6 @@ class FinancialResearchManager:
         print(f"Report:\n{report.markdown_report}")
         print("\n\n=====FOLLOW UP QUESTIONS=====\n\n")
         print("\n".join(report.follow_up_questions))
-        print("\n\n=====VERIFICATION=====\n\n")
-        print(verification)
 
     async def _plan_searches(self, query: str) -> FinancialSearchPlan:
         self.printer.update_item("planning", "Planning searches...")
@@ -168,16 +164,39 @@ class FinancialResearchManager:
         self._log("Writer", "Output", final_output.markdown_report[:500] + "...") # Log first 500 chars to avoid huge payload
         return final_output
 
-    async def _verify_report(self, report: FinancialReportData) -> VerificationResult:
+    async def verify_report(self, report_text: str, focus: str = None) -> VerificationResult:
+        """Manually trigger verification of a report."""
         self.printer.update_item("verifying", "Verifying report...")
-        self._log("Verifier", "Input", report.markdown_report)
         
-        # Hard cap turns to prevent infinite loops
-        result = await Runner.run(verifier_agent, report.markdown_report, max_turns=5)
-        self._log("Verifier", "Output", str(result.final_output))
+        input_text = f"Report to verify:\n{report_text}"
+        if focus:
+            input_text += f"\n\nFocus on this specific question/claim: {focus}"
+            
+        self._log("Verifier", "Input", input_text)
         
-        verification = result.final_output_as(VerificationResult)
-        
+        # Hard cap turns to prevent infinite loops, and add timeout to prevent tool hangs
+        try:
+            result = await asyncio.wait_for(
+                Runner.run(verifier_agent, input_text, max_turns=5),
+                timeout=120.0  # 2 minute timeout
+            )
+            self._log("Verifier", "Output", str(result.final_output))
+            verification = result.final_output_as(VerificationResult)
+        except asyncio.TimeoutError:
+            self._log("Verifier", "Error", "Verification timed out after 120 seconds")
+            verification = VerificationResult(
+                verified=False,
+                issues="Verification process timed out. The agent was unable to complete the fact-checking within the time limit.",
+                fact_checks=[]
+            )
+        except Exception as e:
+            self._log("Verifier", "Error", f"Verification failed: {e}")
+            verification = VerificationResult(
+                verified=False,
+                issues=f"Verification failed due to an error: {str(e)}",
+                fact_checks=[]
+            )
+
         self._log("Verifier", "Verification complete", f"Verified: {verification.verified}\nIssues: {verification.issues}")
         self.printer.mark_item_done("verifying")
         return verification

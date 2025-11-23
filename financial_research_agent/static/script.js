@@ -59,6 +59,7 @@ async function clearHistory() {
 }
 
 // Load and render stock chart
+// Load and render stock chart
 async function loadChart(query) {
     const canvas = document.getElementById('stockChart');
     if (!canvas) return;
@@ -102,11 +103,14 @@ async function loadChart(query) {
                     data: data.prices,
                     borderColor: '#5b7ae5',
                     backgroundColor: gradient,
-                    borderWidth: 2,
+                    borderWidth: 3,
                     fill: true,
                     tension: 0.4,
                     pointRadius: 0,
-                    pointHoverRadius: 4
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#5b7ae5',
+                    pointHoverBorderWidth: 3
                 }]
             },
             options: {
@@ -119,11 +123,18 @@ async function loadChart(query) {
                     tooltip: {
                         mode: 'index',
                         intersect: false,
-                        backgroundColor: 'rgba(30, 45, 74, 0.9)',
+                        backgroundColor: 'rgba(10, 22, 40, 0.9)',
                         titleColor: '#fff',
                         bodyColor: '#a8b3cf',
-                        borderColor: '#2d3f5f',
-                        borderWidth: 1
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function (context) {
+                                return '$' + context.parsed.y.toFixed(2);
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -133,15 +144,26 @@ async function loadChart(query) {
                             drawBorder: false
                         },
                         ticks: {
-                            display: false
+                            maxTicksLimit: 8,
+                            color: '#6b7a99',
+                            font: {
+                                size: 10
+                            }
                         }
                     },
                     y: {
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.05)'
+                            color: 'rgba(255, 255, 255, 0.05)',
+                            drawBorder: false
                         },
                         ticks: {
-                            color: '#6b7a99'
+                            color: '#6b7a99',
+                            font: {
+                                size: 10
+                            },
+                            callback: function (value) {
+                                return '$' + value;
+                            }
                         }
                     }
                 },
@@ -338,7 +360,7 @@ function displayResults(data) {
         </div>
         <div class="metric-card">
             <div class="metric-label">Verified</div>
-            <div class="metric-value">${data.verification.verified ? 'Yes' : 'No'}</div>
+            <div class="metric-value">${data.verification ? (data.verification.verified ? 'Yes' : 'No') : 'Pending'}</div>
         </div>
         <div class="metric-card">
             <div class="metric-label">Recommendation</div>
@@ -393,14 +415,15 @@ function displayResults(data) {
     }
 
     verificationContent.innerHTML = `
-        <div style="padding: 1rem; background: ${data.verification.verified ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; border-radius: 8px; border-left: 4px solid ${data.verification.verified ? '#10b981' : '#ef4444'};">
-            <p style="font-weight: 600; margin-bottom: 0.5rem;">
-                ${data.verification.verified ? '✓ Verification Passed' : '⚠ Verification Issues Found'}
-            </p>
-            <p style="color: var(--text-secondary);">${data.verification.issues}</p>
-            ${factChecksHtml}
+        <div class="verification-placeholder">
+            <p>Verification has not been run yet.</p>
+            <button class="verify-btn-small" onclick="startVerification()">Run Verification</button>
         </div>
     `;
+
+    if (data.verification) {
+        displayVerificationResult(data.verification);
+    }
 }
 
 // Show error
@@ -535,5 +558,108 @@ document.getElementById('queryInput').addEventListener('keypress', (e) => {
     }
 });
 
-// Auto-focus on input
-document.getElementById('queryInput').focus();
+// Start manual verification
+async function startVerification() {
+    const reportText = document.getElementById('reportMarkdown').getAttribute('data-markdown');
+    if (!reportText) return;
+
+    const verificationContent = document.getElementById('verificationContent');
+    verificationContent.innerHTML = `
+        <div class="verification-loading">
+            <div class="spinner"></div>
+            <p>Verifying report... This may take a moment.</p>
+        </div>
+    `;
+
+    // Show activity log if hidden
+    document.getElementById('activitySection').style.display = 'block';
+
+    try {
+        const response = await fetch('/api/verify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ report: reportText }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to start verification');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                const eventMatch = line.match(/^event: (.+)$/m);
+                const dataMatch = line.match(/^data: (.+)$/m);
+
+                if (eventMatch && dataMatch) {
+                    const eventType = eventMatch[1];
+                    const data = JSON.parse(dataMatch[1]);
+
+                    if (eventType === 'agent_log') {
+                        addActivityLog(data);
+                    } else if (eventType === 'complete') {
+                        displayVerificationResult(data);
+                    } else if (eventType === 'error') {
+                        verificationContent.innerHTML = `<div class="error-message">${data.message}</div>`;
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Verification error:', error);
+        verificationContent.innerHTML = `<div class="error-message">Failed to verify report</div>`;
+    }
+}
+
+function displayVerificationResult(data) {
+    const verificationContent = document.getElementById('verificationContent');
+
+    let factChecksHtml = '';
+    if (data.fact_checks && data.fact_checks.length > 0) {
+        factChecksHtml = '<div style="margin-top: 1rem;"><h4>Fact Checks</h4><ul class="fact-check-list">';
+        data.fact_checks.forEach(check => {
+            const icon = check.verified ? '✅' : '❌';
+            factChecksHtml += `
+                <li class="fact-check-item">
+                    <div class="fact-check-icon">${icon}</div>
+                    <div class="fact-check-content">
+                        <div class="fact-check-claim">${check.claim}</div>
+                        <div class="fact-check-evidence">${check.evidence}</div>
+                        ${check.source_url ? `<a href="${check.source_url}" target="_blank" class="fact-check-source">Source</a>` : ''}
+                    </div>
+                </li>
+            `;
+        });
+        factChecksHtml += '</ul></div>';
+    }
+
+    verificationContent.innerHTML = `
+        <div class="verification-result ${data.verified ? 'verified' : 'issues'}">
+            <div class="verification-header">
+                <span class="verification-status-icon">${data.verified ? '✓' : '⚠'}</span>
+                <h4 class="verification-status-title">${data.verified ? 'Verification Passed' : 'Issues Found'}</h4>
+            </div>
+            <p class="verification-summary">${data.issues}</p>
+            ${factChecksHtml}
+        </div>
+    `;
+
+    // Update metric
+    const metricValue = document.querySelector('.metric-card:nth-child(3) .metric-value');
+    if (metricValue) {
+        metricValue.textContent = data.verified ? 'Yes' : 'No';
+    }
+}
