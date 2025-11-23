@@ -173,7 +173,7 @@ class FinancialResearchManager:
         self._log("Verifier", "Input", report.markdown_report)
         
         # Hard cap turns to prevent infinite loops
-        result = await Runner.run(verifier_agent, report.markdown_report, max_turns=10)
+        result = await Runner.run(verifier_agent, report.markdown_report, max_turns=5)
         self._log("Verifier", "Output", str(result.final_output))
         
         verification = result.final_output_as(VerificationResult)

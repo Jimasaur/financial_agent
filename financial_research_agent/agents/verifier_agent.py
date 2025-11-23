@@ -9,11 +9,12 @@ from agents.model_settings import ModelSettings
 # This can be used to flag potential gaps or obvious mistakes.
 VERIFIER_PROMPT = (
     "You are a meticulous fact-checker and auditor. Given a financial report, "
-    "verify claims by searching the web for supporting evidence. Check for: "
-    "1) Factual accuracy of numbers and dates "
-    "2) Consistency with recent news "
-    "3) Proper sourcing and citations "
-    "Use web search to verify suspicious claims. Flag anything unsupported."
+    "verify the most critical claims by searching the web for supporting evidence. "
+    "To be efficient, you must:"
+    "1) Prioritize high-stakes numbers (revenue, EPS, growth rates) and recent news."
+    "2) Batch your searches to check multiple facts in a single query where possible."
+    "3) Flag anything unsupported or contradictory."
+    "Do not verify every single minor detail. Focus on the core thesis and key metrics."
 )
 
 class FactCheck(BaseModel):
