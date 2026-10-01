@@ -1,6 +1,8 @@
 # Financial Research Agent
 
-A powerful AI agent that performs comprehensive financial research, verifies facts, and visualizes stock data.
+A Python research prototype that coordinates specialized agents to gather financial information, draft a report, cross-check claims, and display market-data charts.
+
+**Status: experimental research demo.** Generated reports and verifier outputs can be incomplete or incorrect. Independently check sources and dates; this project is not investment advice or an automated trading system. External API use may incur charges.
 
 ## Features
 
@@ -8,7 +10,7 @@ A powerful AI agent that performs comprehensive financial research, verifies fac
 -   **Real-time Web Search**: Fetches the latest market news and data.
 -   **Fact-Checking**: A dedicated Verifier agent cross-references claims with web sources.
 -   **Live Charts**: Displays 30-day stock price charts and performance trends.
--   **Activity Logging**: Watch the agents think and act in real-time.
+-   **Activity Logging**: Inspect workflow events and progress in real time.
 
 ## Setup
 
@@ -40,7 +42,7 @@ Open your browser to: http://localhost:5000
 
 ### CLI Mode
 
-Run the agent in the terminal:
+The CLI does not load the example `.env` file automatically. Set `OPENAI_API_KEY` in your shell environment before running it (do not paste a key into source control or shared shell transcripts):
 
 ```bash
 python -m financial_research_agent.main
