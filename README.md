@@ -42,7 +42,7 @@ Open your browser to: http://localhost:5000
 
 ### CLI Mode
 
-Run the agent in the terminal:
+The CLI does not load the example `.env` file automatically. Set `OPENAI_API_KEY` in your shell environment before running it (do not paste a key into source control or shared shell transcripts):
 
 ```bash
 python -m financial_research_agent.main
